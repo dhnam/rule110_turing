@@ -2,8 +2,8 @@
 """
 TagSysSymbol = str
 TagSysSymbolSet = set[TagSysSymbol]
-TagSysTransition = dict[TagSysSymbol, list[TagSysSymbol]]
-
+TagSysTag = list[TagSysSymbol]
+TagSysTransition = dict[TagSysSymbol, TagSysTag]
 
 class TagSysTape:
     """Tape for Tag System
@@ -31,11 +31,11 @@ class TagSysTape:
         """
         self.tape = self.tape[num:]
 
-    def tag(self, symbols: list[TagSysSymbol]):
+    def tag(self, symbols: TagSysTag):
         """Tag the tape with given symbols
 
         Args:
-            symbols (list[TagSysSymbol]): Symbols to tag with
+            symbols (TagSysTag): Symbols to tag with
         """
         self.tape.extend(symbols)
 
