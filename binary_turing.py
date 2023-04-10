@@ -255,9 +255,7 @@ class BinaryTuring:
         output_str += "state: " + str(self.state) + "\n"
         return output_str
 
-    def step(self):
-        """Make step of Turing machine
-        """
+    def __next__(self):
         read = self.read_tape()
         transition: TuringTransition = self.table[self.state].transitions[0 if read ==
                                                                           TuringSymbol.ZERO else 1]
@@ -286,7 +284,7 @@ if __name__ == "__main__":
     machine = BinaryTuring(transition_table, tape_init)
     print(machine)
     for _ in range(10):
-        machine.step()
+        next(machine)
     print(machine)
     machine.tape_tuple = test_tuple
     print(machine)
