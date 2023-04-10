@@ -63,7 +63,10 @@ class TransitionTable(Mapping[TuringState, TuringStateTransition]):
     def __len__(self):
         return len(self.state_table)
     
+    
 class BinaryTuringTape:
+    """Tape used in Turing machine
+    """
     def __init__(self, tape: list[TuringSymbol|int]|None = None):
         self.tape: list[TuringSymbol] = []
         if tape is not None:
@@ -89,6 +92,8 @@ class BinaryTuringTape:
         self.tape[self._head_addr] = value
         
     def _move_left(self):
+        if self._head_addr == len(self.tape) - 1 and self.tape[-1] == TuringSymbol.ZERO:
+            self.tape.pop()
         self.head -= 1
         if self.head < self.tape_offset:
             self.tape_offset -= 1
@@ -115,70 +120,86 @@ class BinaryTuringTape:
             
     @classmethod
     def from_tape_tuple(cls, tape_tuple: TuringTapeTuple) -> BinaryTuringTape:
-        new_tape: BinaryTuringTape = object.__new__(cls)
-        new_tape.__init__()
-        left_length = tape_tuple.left_number.bit_length()
-        # TODO fix logic
-        for i in range(left_length, 0, -1):
-            print(i, tape_tuple.left_number, tape_tuple.left_number.bit_length())
-            if i == tape_tuple.left_number.bit_length():
-                new_tape.tape.append(TuringSymbol.ONE)
-                tape_tuple.left_number >>= 1
-            else:
-                new_tape.tape.append(TuringSymbol.ZERO)
-        return new_tape
-
-class BinaryTuring:
-    def __init__(self, table: TransitionTable, tape: list[TuringSymbol|int]|None = None):
-        self.tape: list[TuringSymbol] = []
-        if tape is not None:
-            self.tape = [TuringSymbol.ONE if x == 1 else TuringSymbol.ZERO for x in tape]
-        self.head: int = 0
-        self.tape_offset: int = 0
-        self.table = table
-        self.state: TuringState = 0
-
-    def _move_left(self):
-        self.head -= 1
-        if self.head < self.tape_offset:
-            self.tape_offset -= 1
-            self.tape.insert(0, TuringSymbol.ZERO)
-
-    def _move_right(self):
-        if self.head == self.tape_offset and self.tape[0] == TuringSymbol.ZERO:
-            self.tape.pop(0)
-            self.tape_offset += 1
-        self.head += 1
-        if self._head_addr >= len(self.tape):
-            self.tape.append(TuringSymbol.ZERO)
-
-    def move_tape(self, direction: TuringDirection):
-        """Move tape for respective direction
+        """Build tape from `TuringTapeTuple`. State is ignored.
 
         Args:
-            direction (TuringDirection): direction to move
-        """
-        if direction == TuringDirection.LEFT:
-            self._move_left()
-        else:
-            self._move_right()
-            
-    @property
-    def _head_addr(self) -> int:
-        return self.head - self.tape_offset
-            
-    @property
-    def head_symbol(self) -> TuringSymbol:
-        """Get symbol on tape pointed by head
+            tape_tuple (TuringTapeTuple): Tape tuple to build with
 
         Returns:
-            TuringSymbols: Symbol pointed
+            BinaryTuringTape: Tape built.
         """
-        return self.tape[self._head_addr]
+        new_tape: BinaryTuringTape = object.__new__(cls)
+        new_tape.__init__()
+        left_number = tape_tuple.left_number
+        for i in range(tape_tuple.left_number.bit_length(), 0, -1):
+            if i == left_number.bit_length():
+                new_tape.tape.append(TuringSymbol.ONE)
+                left_number ^= 1 << left_number.bit_length() - 1
+            else:
+                new_tape.tape.append(TuringSymbol.ZERO)
+        new_tape.tape.append(tape_tuple.head)
+        new_tape.head = tape_tuple.left_number.bit_length()
+        right_number = tape_tuple.right_number
+        for i in range(tape_tuple.right_number.bit_length(), 0, -1):
+            if right_number & 1 == 0:
+                new_tape.tape.append(TuringSymbol.ZERO)
+            else:
+                new_tape.tape.append(TuringSymbol.ONE)
+            right_number >>= 1
+        return new_tape
     
-    @head_symbol.setter
-    def head_symbol(self, value: TuringSymbol):
-        self.tape[self._head_addr] = value
+    @property
+    def left_number(self) -> int:
+        """'Left number' of the tape. Binary number built with symbols placed at the left side of the head.
+
+        Returns:
+            int : calculated number
+        """
+        left_number: int = 0
+        for i, next_symbol in enumerate(self.tape):
+            if i < self._head_addr:
+                left_number <<= 1
+                if next_symbol == TuringSymbol.ONE:
+                    left_number |= 1
+            else:
+                break
+        return left_number
+    
+    @property
+    def right_number(self) -> int:
+        """'Right number' of the tape. Binary number built with symbols placed at the right side of the head.
+
+        Returns:
+            int : calculated number
+        """
+        right_number: int = 0
+        for i, next_symbol in enumerate(self.tape):
+            if i > self._head_addr and next_symbol != TuringSymbol.ZERO:
+                right_number |= (1 << (i - self._head_addr - 1))
+        return right_number
+    
+    def __str__(self) -> str:
+        output_str: str = ""
+        for next_symbol in self.tape:
+            if next_symbol == TuringSymbol.ONE:
+                output_str += "1 "
+            else:
+                output_str += "0 "
+        output_str += "\n"
+        output_str += "  " * self._head_addr + "^"
+        return output_str
+
+
+class BinaryTuring:
+    def __init__(self, table: TransitionTable, tape: BinaryTuringTape|list[int|TuringSymbol]|None = None):
+        if tape is None:
+            self.tape = BinaryTuringTape()
+        elif isinstance(tape, list):
+            self.tape = BinaryTuringTape(tape)
+        else:
+            self.tape = tape
+        self.table = table
+        self.state: TuringState = 0
 
     def read_tape(self) -> TuringSymbol:
         """Function version of `pointed_symbol`.
@@ -186,50 +207,36 @@ class BinaryTuring:
         Returns:
             TuringSymbols: Symbol read from tape
         """
-        return self.head_symbol
+        return self.tape.head_symbol
     
     def write_tape(self, value: TuringSymbol):
         """Function version of `pointed_symbol`.
         """
-        self.head_symbol = value
+        self.tape.head_symbol = value
         
     
     @property
     def tape_tuple(self) -> TuringTapeTuple:
-        """Get TuringTapeTuple of the Turing Machine. This represents current state.
+        """TuringTapeTuple of the Turing Machine. This represents current state.
 
         Returns:
-            TuringTapeTuple: Calculated TuringTapeTuple
+            TuringTapeTuple: TuringTapeTuple of the machine
         """
-        left_number: int = 0
-        right_number: int = 0
-        for i, next_symbol in enumerate(self.tape):
-            if i == self._head_addr:
-                continue
-            if i < self._head_addr:
-                left_number <<= 1
-                if next_symbol == TuringSymbol.ONE:
-                    left_number |= 1
-            else:
-                if next_symbol == TuringSymbol.ZERO:
-                    continue
-                right_number |= (1 << (i - self._head_addr - 1))
         return TuringTapeTuple(
             state=self.state,
-            left_number=left_number,
-            right_number=right_number,
-            head=self.head_symbol
+            left_number=self.tape.left_number,
+            right_number=self.tape.right_number,
+            head=self.tape.head_symbol
         )
+        
+    @tape_tuple.setter
+    def tape_tuple(self, value: TuringTapeTuple):
+        self.state = value.state
+        self.tape = BinaryTuringTape.from_tape_tuple(value)
 
     def __str__(self) -> str:
         output_str = str(self.tape_tuple) + "\n"
-        for next_symbol in self.tape:
-            if next_symbol == TuringSymbol.ONE:
-                output_str += "1 "
-            else:
-                output_str += "0 "
-        output_str += "\n"
-        output_str += "  " * self._head_addr + "^" + "\n"
+        output_str += str(self.tape)
         output_str += "state: " + str(self.state) + "\n"
         return output_str
     
@@ -239,8 +246,10 @@ class BinaryTuring:
         read = self.read_tape()
         transition: TuringTransition = self.table[self.state].transitions[0 if read == TuringSymbol.ZERO else 1]
         self.write_tape(transition.write)
-        self.move_tape(transition.move)
+        self.tape.move_tape(transition.move)
         self.state = transition.next_state
+
+        
 
 
 if __name__ == "__main__":
@@ -251,16 +260,19 @@ if __name__ == "__main__":
             TuringTransition(TuringSymbol.ZERO, TuringDirection.RIGHT, 0)
         )
     )])
-    tape = BinaryTuringTape.from_tape_tuple(TuringTapeTuple(
+    test_tuple = TuringTapeTuple(
         0,
-        13,
-        12,
-        1
-    ))
-    print(tape.tape)
+        7,
+        6,
+        TuringSymbol.ZERO,
+    )
+    test_tape = BinaryTuringTape.from_tape_tuple(test_tuple)
+    print(test_tape)
     tape_init = [0,1,1,1,0,0,1,1]
     machine = BinaryTuring(transition_table, tape_init)
-    #print(machine)
+    print(machine)
     for _ in range(10):
         machine.step()
-        #print(machine)
+    print(machine)
+    machine.tape_tuple = test_tuple
+    print(machine)
