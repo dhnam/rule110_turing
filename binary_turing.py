@@ -50,7 +50,7 @@ class TuringTapeTuple:
     head: TuringSymbol
 
 
-class TransitionTable(Mapping[TuringState, TuringStateTransition]):
+class TuringTransitionTable(Mapping[TuringState, TuringStateTransition]):
     """Transition Table for Turing machine. Can be used like read-only dictionary.
     """
 
@@ -205,7 +205,7 @@ class BinaryTuring:
     """
     def __init__(
             self,
-            table: TransitionTable,
+            table: TuringTransitionTable,
             tape: BinaryTuringTape | list[int | TuringSymbol] | None = None
         ):
         if tape is None:
@@ -265,7 +265,7 @@ class BinaryTuring:
 
 
 if __name__ == "__main__":
-    transition_table = TransitionTable([TuringStateTransition(
+    transition_table = TuringTransitionTable([TuringStateTransition(
         0,
         (
             TuringTransition(TuringSymbol.ONE, TuringDirection.RIGHT, 0),
