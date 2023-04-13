@@ -15,8 +15,13 @@ class CyclicSymbol(Enum):
 class CyclicTag(list[CyclicSymbol]):
     """Custom list of Cyclic Symbol
     """
+
     def __str__(self):
         return " ".join("0" if x == CyclicSymbol.NO else "1" for x in self)
+
+    def __repr__(self):
+        return str(self)
+
     @staticmethod
     def fromstr(string: str) -> CyclicTag:
         """Get list of CyclicSymbol from string of 0 and 1s.
