@@ -11,20 +11,23 @@ class CyclicSymbol(Enum):
     NO = 0
     YES = 1
 
+
+class CyclicTag(list[CyclicSymbol]):
+    """Custom list of Cyclic Symbol
+    """
+    def __str__(self):
+        return " ".join("0" if x == CyclicSymbol.NO else "1" for x in self)
     @staticmethod
-    def fromstr(string: str) -> list[CyclicSymbol]:
+    def fromstr(string: str) -> CyclicTag:
         """Get list of CyclicSymbol from string of 0 and 1s.
 
         Args:
             string (str): String consisted with 0 and 1
 
         Returns:
-            list[CyclicSymbol]: list of Cyclic Symbol
+            CyclicTag: list of Cyclic Symbol
         """
-        return [CyclicSymbol.NO if x == "0" else CyclicSymbol.YES for x in string]
-
-
-CyclicTag = list[CyclicSymbol]
+        return CyclicTag(CyclicSymbol.NO if x == "0" else CyclicSymbol.YES for x in string)
 
 
 class CyclicTransition:
@@ -48,11 +51,9 @@ class CyclicTransition:
     def __str__(self):
         string = ""
         for i, next_transition in enumerate(self.transitions):
-            string += f"{i}: "
-            for next_symbol in next_transition:
-                string += "0 " if next_symbol == CyclicSymbol.NO else "1 "
+            string += f"{i}: {next_transition}"
             if i == self.point:
-                string += "<<<"
+                string += " <<<"
             string += "\n"
         string = string[:-1]
         return string
@@ -120,11 +121,11 @@ class CyclicTagSystem:
 
 
 if __name__ == "__main__":
-    exampleTape = CyclicTape(CyclicSymbol.fromstr("011011101"))
+    exampleTape = CyclicTape(CyclicTag.fromstr("011011101"))
     exampleTransition = CyclicTransition([
-        CyclicSymbol.fromstr("11"),
-        CyclicSymbol.fromstr("0011"),
-        CyclicSymbol.fromstr("1101"),
+        CyclicTag.fromstr("11"),
+        CyclicTag.fromstr("0011"),
+        CyclicTag.fromstr("1101"),
     ])
     exampleSystem = CyclicTagSystem(exampleTransition, exampleTape)
 
