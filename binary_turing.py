@@ -201,7 +201,7 @@ class BinaryTuringTape:
 
 
 class BinaryTuring:
-    """Turing machien with two states.
+    """Turing machine with two states.
     """
     def __init__(
             self,
