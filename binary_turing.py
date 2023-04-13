@@ -251,8 +251,8 @@ class BinaryTuring:
 
     def __str__(self) -> str:
         output_str = str(self.tape_tuple) + "\n"
-        output_str += str(self.tape)
-        output_str += "state: " + str(self.state) + "\n"
+        output_str += str(self.tape) + "\n"
+        output_str += "state: " + str(self.state)
         return output_str
 
     def __next__(self):
