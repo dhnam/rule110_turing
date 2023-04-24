@@ -52,6 +52,9 @@ class CyclicTransition:
         if self.point >= len(self.transitions):
             self.point = 0
         return val
+    
+    def __len__(self) -> int:
+        return len(self.transitions)
 
     def __str__(self):
         string = ""
