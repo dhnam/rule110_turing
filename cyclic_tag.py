@@ -12,8 +12,8 @@ class CyclicSymbol(Enum):
     YES = 1
 
 
-class CyclicTag(list[CyclicSymbol]):
-    """Custom list of Cyclic Symbol
+class CyclicTag(tuple[CyclicSymbol]):
+    """Custom tuple of Cyclic Symbol
     """
 
     def __str__(self):
@@ -24,13 +24,13 @@ class CyclicTag(list[CyclicSymbol]):
 
     @staticmethod
     def fromstr(string: str) -> CyclicTag:
-        """Get list of CyclicSymbol from string of 0 and 1s.
+        """Get tuple of CyclicSymbol from string of 0 and 1s.
 
         Args:
             string (str): String consisted with 0 and 1
 
         Returns:
-            CyclicTag: list of Cyclic Symbol
+            CyclicTag: tuple of Cyclic Symbol
         """
         return CyclicTag(CyclicSymbol.NO if x == "0" else CyclicSymbol.YES for x in string)
 
@@ -73,6 +73,18 @@ class CyclicTape:
         if tape is not None:
             self.tape = tape
 
+    @classmethod
+    def from_tag(cls, tag: CyclicTag) -> CyclicTape:
+        """Return new CyclicTape from tag.
+
+        Args:
+            tag (CyclicTag): CyclicTag object
+
+        Returns:
+            CyclicTape: new CyclicTape
+        """
+        return cls(list(tag))
+
     def pop(self) -> CyclicSymbol:
         """Remove first element of the tape and returns.
 
@@ -103,7 +115,10 @@ class CyclicTagSystem:
     """Cyclic Tag System
     """
 
-    def __init__(self, transition: CyclicTransition, tape: CyclicTape | list[CyclicSymbol | int] | None = None):
+    def __init__(
+            self, transition: CyclicTransition,
+            tape: CyclicTape | list[CyclicSymbol | int] | None = None
+    ):
         self.transition = transition
         self.tape: CyclicTape
         if isinstance(tape, CyclicTape):
@@ -126,7 +141,7 @@ class CyclicTagSystem:
 
 
 if __name__ == "__main__":
-    exampleTape = CyclicTape(CyclicTag.fromstr("011011101"))
+    exampleTape = CyclicTape.from_tag(CyclicTag.fromstr("011011101"))
     exampleTransition = CyclicTransition([
         CyclicTag.fromstr("11"),
         CyclicTag.fromstr("0011"),
