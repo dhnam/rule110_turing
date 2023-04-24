@@ -1,7 +1,9 @@
 from tag_system import TagSysTransition, TagSysTag, TagSysTape, TagSysSymbol, TagSystem
 from cyclic_tag import CyclicTransition, CyclicTag, CyclicSymbol, CyclicTagSystem, CyclicTape
 
-def tag_system_to_cyclic_tags_dict(tag_system: TagSystem) -> dict[TagSysSymbol, CyclicTag]:
+TagToCyclicTranslationDict = dict[TagSysSymbol, CyclicTag]
+
+def tag_system_to_cyclic_tags_dict(tag_system: TagSystem) -> TagToCyclicTranslationDict:
     tags = tag_system.symbol_set
     tag_count = len(tags)
     tag_dict: dict[TagSysSymbol, CyclicTag] = {}
@@ -28,12 +30,51 @@ def tag_system_to_cyclic_tape(tag_system: TagSystem) -> CyclicTape:
         tape.extend(trans_dict[next_symbol])
     return CyclicTape(tape)
 
-def cyclic_tape_to_tag_tape(cyclic_tape: CyclicTape, trans_dict: dict[TagSysSymbol, CyclicTag]) -> TagSysTape:
+def cyclic_tape_dict_to_tag_tape(cyclic_tape: CyclicTape, trans_dict: TagToCyclicTranslationDict) -> TagSysTape:
     assert len(cyclic_tape.tape) % len(trans_dict) == 0
     # https://docs.python.org/3/library/itertools.html#itertools-recipes grouper
     args = [iter(cyclic_tape.tape)] * len(trans_dict)
+    reverse_trans_dict = {}
+    for key, value in trans_dict.items():
+        assert value not in reverse_trans_dict
+        reverse_trans_dict[value] = key
+    tag_tape_list = []
     for next_chunk in zip(*args):
-        print(next_chunk)
+        tag_tape_list += reverse_trans_dict[CyclicTag(next_chunk)]
+    return TagSysTape(tag_tape_list)
+
+def cyclic_transition_to_symbol_count(cyclic_transition: CyclicTransition) -> int:
+    return len([s for s in cyclic_transition.transitions if len(s) == 0])
+
+def cyclic_transition_dict_to_tag_transition(cyclic_transition: CyclicTransition, trans_dict:TagToCyclicTranslationDict) -> TagSysTransition:
+    reverse_trans_dict: dict[CyclicTag, TagSysSymbol] = {}
+    for key, value in trans_dict.items():
+        assert value not in reverse_trans_dict
+        reverse_trans_dict[value] = key
+    symbol_count = cyclic_transition_to_symbol_count(cyclic_transition)
+    tag_trans:TagSysTransition = {}
+    for i, next_transition_tag in enumerate(cyclic_transition):
+        if len(next_transition_tag) == 0:
+            break
+        ith_tag = CyclicTag(CyclicSymbol.YES if idx==i else CyclicSymbol.NO for idx in range(symbol_count))
+        args = [iter(next_transition_tag)] * len(trans_dict)
+        next_tag_sys_tag: TagSysTag = TagSysTag()
+        for next_chunk in zip(*args):
+            next_cyclic_tag = CyclicTag(next_chunk)
+            next_tag_sys_tag.append(reverse_trans_dict[next_cyclic_tag])
+            
+        tag_trans[reverse_trans_dict[ith_tag]] = next_tag_sys_tag
+    return tag_trans
+
+def cyclic_system_dict_to_tag_system(cyclic_system: CyclicTagSystem, trans_dict: TagToCyclicTranslationDict) -> TagSystem:
+    c_tape = cyclic_system.tape
+    c_transition = cyclic_system.transition
+    t_tape = cyclic_tape_dict_to_tag_tape(c_tape, trans_dict)
+    t_transition = cyclic_transition_dict_to_tag_transition(c_transition, trans_dict)
+    num, mod = divmod(len(cyclic_transition), cyclic_transition_to_symbol_count(c_transition))
+    assert mod == 0
+    return TagSystem(t_transition, num, t_tape)
+
     
 if __name__ == "__main__":
     transition_table: TagSysTransition = {
@@ -44,7 +85,7 @@ if __name__ == "__main__":
 
     tag_machine = TagSystem(transition_table, tape=["a", "a", "a"])
     print(tag_machine)
-    print(dict := tag_system_to_cyclic_tags_dict(tag_machine))
+    print(tag_dict := tag_system_to_cyclic_tags_dict(tag_machine))
     print(cyclic_transition := tag_system_to_cyclic_transitions(tag_machine))
     print(tape := tag_system_to_cyclic_tape(tag_machine))
     cyclic_machine = CyclicTagSystem(cyclic_transition, tape)
@@ -53,4 +94,7 @@ if __name__ == "__main__":
         print(cyclic_machine)
     next(tag_machine)
     print(tag_machine)
-    cyclic_tape_to_tag_tape(cyclic_machine.tape, dict)
+    print(cyclic_system_dict_to_tag_system(cyclic_machine, tag_dict))
+    
+    
+    #TODO make it more like turing_to_tag.py
