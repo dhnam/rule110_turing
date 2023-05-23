@@ -4,7 +4,7 @@ from cyclic_tag import CyclicTransition, CyclicTag, CyclicSymbol, CyclicTagSyste
 TagToCyclicTranslationDict = dict[TagSysSymbol, CyclicTag]
 
 def tag_system_to_cyclic_tags_dict(tag_system: TagSystem) -> TagToCyclicTranslationDict:
-    tags = tag_system.symbol_set
+    tags = tag_system.symbol_list
     tag_count = len(tags)
     tag_dict: dict[TagSysSymbol, CyclicTag] = {}
     for i, next_tag in enumerate(tags):
@@ -75,6 +75,11 @@ def cyclic_system_dict_to_tag_system(cyclic_system: CyclicTagSystem, trans_dict:
     assert mod == 0
     return TagSystem(t_transition, num, t_tape)
 
+def is_tag_step_passed(cyclic: CyclicTagSystem) -> bool:
+    return cyclic.transition.point == 0
+
+def tag_system_to_cyclic_machine(tag_machine:TagSystem) -> CyclicTagSystem:
+    return CyclicTagSystem(tag_system_to_cyclic_transitions(tag_machine), tag_system_to_cyclic_tape(tag_machine))
     
 if __name__ == "__main__":
     transition_table: TagSysTransition = {
@@ -89,12 +94,11 @@ if __name__ == "__main__":
     print(cyclic_transition := tag_system_to_cyclic_transitions(tag_machine))
     print(tape := tag_system_to_cyclic_tape(tag_machine))
     cyclic_machine = CyclicTagSystem(cyclic_transition, tape)
-    for _ in range(6):
+    next(cyclic_machine)
+    print(cyclic_machine)
+    while not is_tag_step_passed(cyclic_machine):
         next(cyclic_machine)
         print(cyclic_machine)
     next(tag_machine)
     print(tag_machine)
     print(cyclic_system_dict_to_tag_system(cyclic_machine, tag_dict))
-    
-    
-    #TODO make it more like turing_to_tag.py

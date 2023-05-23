@@ -92,16 +92,16 @@ def turing_machine_to_tag_system(turing_machine: BinaryTuring) -> TagSystem:
         tape=turing_machine_to_tag_tape(turing_machine))
 
 
-def is_step_passed(tag_tape: TagSysTape) -> bool:
+def is_step_passed(tag_sys: TagSystem) -> bool:
     """Check if one cycle of tag system is passed 
 
     Args:
-        tag_tape (TagSysTape): tag system to check
+        tag_sys (TagSystem): tag system to check
 
     Returns:
         bool: result
     """
-    for next_symbol in tag_tape.tape:
+    for next_symbol in tag_sys.tape.tape:
         if next_symbol[-2:] not in (":0", ":1"):
             return False
     return True
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     print(tag_tape_to_turing_tape_tuple(example_tag.tape))
     next(example_turing_machine)
     next(example_tag)
-    while not is_step_passed(example_tag.tape):
+    while not is_step_passed(example_tag):
         next(example_tag)
     print(example_turing_machine)
     print(tag_tape_to_turing_tape_tuple(example_tag.tape))

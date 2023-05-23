@@ -65,6 +65,11 @@ class CyclicTransition:
             string += "\n"
         string = string[:-1]
         return string
+    
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.transitions == other.transitions
 
 
 class CyclicTape:
@@ -112,6 +117,11 @@ class CyclicTape:
             else:
                 string += "0 "
         return string
+    
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return other.tape == self.tape
 
 
 class CyclicTagSystem:
@@ -141,6 +151,11 @@ class CyclicTagSystem:
         string += str(self.transition) + "\n"
         string += "=============="
         return string
+    
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return other.transition == self.transition and other.tape == self.tape
 
 
 if __name__ == "__main__":
